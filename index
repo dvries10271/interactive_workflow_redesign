@@ -1,0 +1,500 @@
+import React, { useState, useRef } from 'react';
+import { Plus, Trash2, Info, Save, Printer, ArrowRight, CheckCircle, AlertTriangle, X } from 'lucide-react';
+
+const WorkflowRedesignGuide = () => {
+  // State for form fields
+  const [formData, setFormData] = useState({
+    initiativeName: '',
+    owner: '',
+    businessGoal: '',
+    
+    // Current State
+    currentStateDesc: '',
+    currentMetrics: { time: '', cost: '', errors: '' },
+    painPoints: [{ id: 1, text: '' }],
+    
+    // Analysis
+    bottlenecks: '',
+    waste: '',
+    
+    // Reinvention
+    eliminationIdeas: '',
+    automationIdeas: '',
+    humanTouchPoints: '',
+    
+    // Future State
+    futureStateDesc: '',
+    targetMetrics: { time: '', cost: '', errors: '' },
+    toolsRequired: '',
+    
+    // Execution
+    pilotGroup: '',
+    successCriteria: ''
+  });
+
+  const [activeTooltip, setActiveTooltip] = useState(null);
+
+  // Helper to update simple fields
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [parent]: { ...prev[parent], [child]: value }
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  // Helper for dynamic lists (Pain Points)
+  const handleListChange = (id, value, listName) => {
+    setFormData(prev => ({
+      ...prev,
+      [listName]: prev[listName].map(item => item.id === id ? { ...item, text: value } : item)
+    }));
+  };
+
+  const addListItem = (listName) => {
+    setFormData(prev => ({
+      ...prev,
+      [listName]: [...prev[listName], { id: Date.now(), text: '' }]
+    }));
+  };
+
+  const removeListItem = (id, listName) => {
+    setFormData(prev => ({
+      ...prev,
+      [listName]: prev[listName].filter(item => item.id !== id)
+    }));
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Tooltip Content Data based on "AI READY" book
+  const tooltips = {
+    businessGoal: {
+      title: "Strategic Alignment",
+      content: "Don't just automate for efficiency. Connect this workflow to a top-level business goal (e.g., 'Reduce operating costs by 10%', 'Cut onboarding time from 12 to 3 days'). Automation without strategy is just doing the wrong thing faster."
+    },
+    currentMetrics: {
+      title: "The 5-5-5 Rule",
+      content: "Prioritize workflows that involve: 5+ hours per week, 5+ people affected, and 5+ steps. Quantify the current state to prove ROI later."
+    },
+    waste: {
+      title: "Spotting Waste",
+      content: "Look for 'Red' steps: Copy-pasting between systems, waiting for approvals that are just rubber stamps, or reformatting data. Eliminate these before you automate."
+    },
+    futureState: {
+      title: "The 10x Test",
+      content: "Are you automating (20-30% improvement) or reinventing (10x improvement)? Don't just make the cow path smoother. Ask: 'If we started from scratch with AI, would we even do this step?'"
+    },
+    humanTouch: {
+      title: "Human-in-the-Loop",
+      content: "AI proposes, Humans dispose. AI should handle data collection, patterns, and drafts (90%). Humans should handle final decisions, exceptions, and relationships (10%)."
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-slate-800 font-sans p-4 md:p-8 print:bg-white print:p-0">
+      
+      {/* Header */}
+      <div className="max-w-5xl mx-auto mb-8 flex justify-between items-center print:hidden">
+        <div>
+          <h1 className="text-3xl font-bold text-indigo-900">Workflow Redesign Guide</h1>
+          <p className="text-gray-600 mt-1">Based on the <span className="font-semibold text-indigo-600">AI READY™ Framework</span></p>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 text-gray-700 transition-colors">
+            <Printer size={18} />
+            <span>Print / PDF</span>
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition-colors">
+            <Save size={18} />
+            <span>Save</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Canvas Area */}
+      <div className="max-w-5xl mx-auto bg-white shadow-xl rounded-xl overflow-hidden border border-gray-200 print:shadow-none print:border-none">
+        
+        {/* Print Header */}
+        <div className="hidden print:block p-8 border-b border-gray-200">
+          <h1 className="text-3xl font-bold text-gray-900">Workflow Redesign Canvas</h1>
+          <p className="text-gray-500">AI READY™ Framework</p>
+        </div>
+
+        {/* Section 1: Overview */}
+        <div className="bg-indigo-50 p-6 border-b border-indigo-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-indigo-900 mb-1">Initiative Name</label>
+              <input 
+                type="text" 
+                name="initiativeName"
+                value={formData.initiativeName}
+                onChange={handleChange}
+                placeholder="e.g., Automated Invoice Processing"
+                className="w-full p-2 border border-indigo-200 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+              />
+            </div>
+            <div className="relative">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-semibold text-indigo-900">Strategic Business Goal</label>
+                <button 
+                  onClick={() => setActiveTooltip(activeTooltip === 'businessGoal' ? null : 'businessGoal')}
+                  className="text-indigo-500 hover:text-indigo-700 print:hidden"
+                >
+                  <Info size={16} />
+                </button>
+              </div>
+              {activeTooltip === 'businessGoal' && (
+                <div className="absolute z-10 right-0 top-8 w-64 bg-indigo-900 text-white text-xs p-3 rounded shadow-lg">
+                  <strong>{tooltips.businessGoal.title}</strong><br/>
+                  {tooltips.businessGoal.content}
+                </div>
+              )}
+              <input 
+                type="text" 
+                name="businessGoal"
+                value={formData.businessGoal}
+                onChange={handleChange}
+                placeholder="Which top strategic goal does this support?"
+                className="w-full p-2 border border-indigo-200 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2">
+          
+          {/* Left Column: CURRENT STATE (EXPOSE) */}
+          <div className="p-6 border-r border-gray-200">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="bg-red-100 p-2 rounded-full text-red-600">
+                <AlertTriangle size={20} />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800">Current State (Expose)</h2>
+            </div>
+
+            {/* Description */}
+            <div className="mb-6">
+              <label className="block text-xs uppercase font-bold text-gray-500 mb-2">Workflow Description</label>
+              <textarea 
+                name="currentStateDesc"
+                value={formData.currentStateDesc}
+                onChange={handleChange}
+                rows={3}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-200 focus:border-red-400 text-sm"
+                placeholder="Describe the manual process today..."
+              />
+            </div>
+
+            {/* Metrics */}
+            <div className="mb-6 relative">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs uppercase font-bold text-gray-500">Baseline Metrics</label>
+                <button 
+                  onClick={() => setActiveTooltip(activeTooltip === 'currentMetrics' ? null : 'currentMetrics')}
+                  className="text-gray-400 hover:text-gray-600 print:hidden"
+                >
+                  <Info size={14} />
+                </button>
+                {activeTooltip === 'currentMetrics' && (
+                  <div className="absolute z-10 right-0 top-6 w-64 bg-gray-800 text-white text-xs p-3 rounded shadow-lg">
+                    <strong>{tooltips.currentMetrics.title}</strong><br/>
+                    {tooltips.currentMetrics.content}
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <span className="text-xs text-gray-400 block mb-1">Time (hrs/wk)</span>
+                  <input 
+                    type="text"
+                    name="currentMetrics.time"
+                    value={formData.currentMetrics.time}
+                    onChange={handleChange}
+                    className="w-full p-2 border border-gray-300 rounded text-sm" 
+                  />
+                </div>
+                <div>
+                  <span className="text-xs text-gray-400 block mb-1">Cost ($/yr)</span>
+                  <input 
+                    type="text"
+                    name="currentMetrics.cost"
+                    value={formData.currentMetrics.cost}
+                    onChange={handleChange}
+                    className="w-full p-2 border border-gray-300 rounded text-sm" 
+                  />
+                </div>
+                <div>
+                  <span className="text-xs text-gray-400 block mb-1">Error Rate</span>
+                  <input 
+                    type="text"
+                    name="currentMetrics.errors"
+                    value={formData.currentMetrics.errors}
+                    onChange={handleChange}
+                    className="w-full p-2 border border-gray-300 rounded text-sm" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Pain Points */}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs uppercase font-bold text-gray-500">Pain Points & Friction</label>
+              </div>
+              <div className="space-y-2">
+                {formData.painPoints.map((point) => (
+                  <div key={point.id} className="flex gap-2">
+                    <input 
+                      type="text"
+                      value={point.text}
+                      onChange={(e) => handleListChange(point.id, e.target.value, 'painPoints')}
+                      className="flex-1 p-2 border border-gray-300 rounded text-sm"
+                      placeholder="e.g., Manual data entry, waiting for approval"
+                    />
+                    <button 
+                      onClick={() => removeListItem(point.id, 'painPoints')}
+                      className="text-gray-400 hover:text-red-500 print:hidden"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+                <button 
+                  onClick={() => addListItem('painPoints')}
+                  className="text-xs text-indigo-600 font-semibold flex items-center gap-1 mt-1 hover:text-indigo-800 print:hidden"
+                >
+                  <Plus size={12} /> Add Pain Point
+                </button>
+              </div>
+            </div>
+
+            {/* Waste Analysis */}
+            <div className="mb-6 relative">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs uppercase font-bold text-gray-500">Waste & Bottlenecks (Red Steps)</label>
+                <button 
+                  onClick={() => setActiveTooltip(activeTooltip === 'waste' ? null : 'waste')}
+                  className="text-gray-400 hover:text-gray-600 print:hidden"
+                >
+                  <Info size={14} />
+                </button>
+                {activeTooltip === 'waste' && (
+                  <div className="absolute z-10 right-0 top-6 w-64 bg-gray-800 text-white text-xs p-3 rounded shadow-lg">
+                    <strong>{tooltips.waste.title}</strong><br/>
+                    {tooltips.waste.content}
+                  </div>
+                )}
+              </div>
+              <textarea 
+                name="waste"
+                value={formData.waste}
+                onChange={handleChange}
+                rows={4}
+                className="w-full p-3 border border-red-200 bg-red-50 rounded-lg text-sm"
+                placeholder="What steps provide NO value? (e.g., reformatting, copy-paste, waiting)"
+              />
+            </div>
+          </div>
+
+          {/* Right Column: FUTURE STATE (AUTOMATE/REINVENT) */}
+          <div className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="bg-green-100 p-2 rounded-full text-green-600">
+                <CheckCircle size={20} />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800">Future State (Reinvent)</h2>
+            </div>
+
+            {/* Reinvention Strategy */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <label className="block text-xs uppercase font-bold text-indigo-600 mb-3">The Reinvention Strategy</label>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">1. Eliminate</label>
+                  <input 
+                    type="text" 
+                    name="eliminationIdeas"
+                    value={formData.eliminationIdeas}
+                    onChange={handleChange}
+                    placeholder="What steps can we stop doing entirely?"
+                    className="w-full p-2 border border-gray-300 rounded text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">2. Automate (The 90%)</label>
+                  <input 
+                    type="text" 
+                    name="automationIdeas"
+                    value={formData.automationIdeas}
+                    onChange={handleChange}
+                    placeholder="Data collection, routing, drafts..."
+                    className="w-full p-2 border border-gray-300 rounded text-sm"
+                  />
+                </div>
+                <div className="relative">
+                  <div className="flex justify-between">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">3. Human-in-the-Loop (The 10%)</label>
+                    <button 
+                      onClick={() => setActiveTooltip(activeTooltip === 'humanTouch' ? null : 'humanTouch')}
+                      className="text-gray-400 hover:text-gray-600 print:hidden"
+                    >
+                      <Info size={12} />
+                    </button>
+                    {activeTooltip === 'humanTouch' && (
+                      <div className="absolute z-10 right-0 bottom-8 w-64 bg-gray-800 text-white text-xs p-3 rounded shadow-lg">
+                        <strong>{tooltips.humanTouch.title}</strong><br/>
+                        {tooltips.humanTouch.content}
+                      </div>
+                    )}
+                  </div>
+                  <input 
+                    type="text" 
+                    name="humanTouchPoints"
+                    value={formData.humanTouchPoints}
+                    onChange={handleChange}
+                    placeholder="Approvals, exceptions, relationship building..."
+                    className="w-full p-2 border border-gray-300 rounded text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Future Description */}
+            <div className="mb-6 relative">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs uppercase font-bold text-gray-500">New Workflow Description</label>
+                <button 
+                  onClick={() => setActiveTooltip(activeTooltip === 'futureState' ? null : 'futureState')}
+                  className="text-gray-400 hover:text-gray-600 print:hidden"
+                >
+                  <Info size={14} />
+                </button>
+                {activeTooltip === 'futureState' && (
+                  <div className="absolute z-10 right-0 top-6 w-64 bg-gray-800 text-white text-xs p-3 rounded shadow-lg">
+                    <strong>{tooltips.futureState.title}</strong><br/>
+                    {tooltips.futureState.content}
+                  </div>
+                )}
+              </div>
+              <textarea 
+                name="futureStateDesc"
+                value={formData.futureStateDesc}
+                onChange={handleChange}
+                rows={3}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-400 text-sm"
+                placeholder="Describe the reinvented process..."
+              />
+            </div>
+
+            {/* Target Metrics */}
+            <div className="mb-6">
+              <label className="block text-xs uppercase font-bold text-gray-500 mb-2">Target Metrics (Aim for 10x)</label>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <span className="text-xs text-gray-400 block mb-1">Time</span>
+                  <input 
+                    type="text"
+                    name="targetMetrics.time"
+                    value={formData.targetMetrics.time}
+                    onChange={handleChange}
+                    className="w-full p-2 border border-gray-300 rounded text-sm" 
+                  />
+                </div>
+                <div>
+                  <span className="text-xs text-gray-400 block mb-1">Cost</span>
+                  <input 
+                    type="text"
+                    name="targetMetrics.cost"
+                    value={formData.targetMetrics.cost}
+                    onChange={handleChange}
+                    className="w-full p-2 border border-gray-300 rounded text-sm" 
+                  />
+                </div>
+                <div>
+                  <span className="text-xs text-gray-400 block mb-1">Error Rate</span>
+                  <input 
+                    type="text"
+                    name="targetMetrics.errors"
+                    value={formData.targetMetrics.errors}
+                    onChange={handleChange}
+                    className="w-full p-2 border border-gray-300 rounded text-sm" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Tools & Execution */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs uppercase font-bold text-gray-500 mb-2">Tools Required</label>
+                <input 
+                  type="text"
+                  name="toolsRequired"
+                  value={formData.toolsRequired}
+                  onChange={handleChange}
+                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                  placeholder="Copilot, Power Automate..." 
+                />
+              </div>
+              <div>
+                <label className="block text-xs uppercase font-bold text-gray-500 mb-2">Pilot Group</label>
+                <input 
+                  type="text"
+                  name="pilotGroup"
+                  value={formData.pilotGroup}
+                  onChange={handleChange}
+                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                  placeholder="Who tests this first?" 
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer / ROI */}
+        <div className="bg-gray-50 p-6 border-t border-gray-200">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="w-full md:w-2/3">
+              <label className="block text-xs uppercase font-bold text-gray-500 mb-2">Definition of Success (Adoption & Impact)</label>
+              <input 
+                type="text" 
+                name="successCriteria"
+                value={formData.successCriteria}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded text-sm"
+                placeholder="e.g., 90% adoption in 30 days, 15 hrs/week saved per person"
+              />
+            </div>
+            <div className="w-full md:w-1/3 flex justify-end">
+              <div className="text-right">
+                <p className="text-xs text-gray-400">Estimated Annual Value</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {/* Simple calculation visualization if numbers are present, else placeholder */}
+                  {(formData.currentMetrics.cost && formData.targetMetrics.cost && !isNaN(formData.currentMetrics.cost) && !isNaN(formData.targetMetrics.cost)) 
+                    ? `$${Number(formData.currentMetrics.cost) - Number(formData.targetMetrics.cost)}` 
+                    : "$ --"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto mt-8 text-center text-gray-400 text-sm print:hidden">
+        <p>Use this canvas to plan your AI initiatives before buying tools.</p>
+      </div>
+    </div>
+  );
+};
+
+export default WorkflowRedesignGuide;
